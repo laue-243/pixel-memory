@@ -2,65 +2,85 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Pixel Memory</title>
+<title>Pixel Memory — Improved</title>
 <style>
-body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; image-rendering: pixelated; }
-canvas { border: 4px solid #555; image-rendering: pixelated; }
+body { background: #111; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; image-rendering: pixelated; font-family: monospace; }
+canvas { border: 6px solid #555; image-rendering: pixelated; }
 </style>
 </head>
 <body>
-<canvas id="game" width="400" height="400"></canvas>
+<canvas id="game" width="480" height="540"></canvas>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 const symbols = ['★','♥','♦','♣','●','▲','■','◆'];
-let cards = [...symbols, ...symbols].sort(() => Math.random()-0.5);
-let flipped = [];
-let matched = new Set();
-let lock = false;
-const cell = 100;
+let cards, flipped, matched, lock, moves, state;
+const cell = 110;
+
+function init() {
+  cards = [...symbols, ...symbols].sort(() => Math.random()-0.5);
+  flipped = [];
+  matched = new Set();
+  lock = false;
+  moves = 0;
+  state = 'play';
+}
 
 function draw() {
-  ctx.fillStyle = '#111';
-  ctx.fillRect(0,0,400,400);
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0,0,480,540);
+  ctx.fillStyle = '#0f0';
+  ctx.font = 'bold 20px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Moves: ' + moves, 240, 30);
+
   for (let i=0; i<16; i++) {
-    const x = (i%4)*cell, y = Math.floor(i/4)*cell;
+    const x = (i%4)*cell + 20, y = Math.floor(i/4)*cell + 50;
     if (matched.has(i) || flipped.includes(i)) {
       ctx.fillStyle = '#0a0';
-      ctx.fillRect(x+5, y+5, 90, 90);
+      ctx.fillRect(x, y, 100, 100);
       ctx.fillStyle = '#fff';
-      ctx.font = '40px monospace';
+      ctx.font = 'bold 48px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(cards[i], x+50, y+50);
     } else {
-      ctx.fillStyle = '#555';
-      ctx.fillRect(x+5, y+5, 90, 90);
+      ctx.fillStyle = '#444';
+      ctx.fillRect(x, y, 100, 100);
+      ctx.fillStyle = '#666';
+      ctx.fillRect(x+10, y+10, 80, 80);
       ctx.fillStyle = '#888';
       ctx.fillRect(x+20, y+20, 60, 60);
     }
   }
+
   if (matched.size === 16) {
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0,0,400,400);
+    ctx.fillRect(0,0,480,540);
     ctx.fillStyle = '#0f0';
-    ctx.font = '30px monospace';
+    ctx.font = 'bold 36px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('You Win!', 200, 200);
+    ctx.fillText('YOU WIN!', 240, 220);
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px monospace';
+    ctx.fillText('Moves: ' + moves, 240, 270);
+    ctx.fillText('Click to play again', 240, 320);
   }
 }
 
 canvas.addEventListener('click', e => {
-  if (lock || matched.size===16) return;
+  if (matched.size === 16) { init(); draw(); return; }
+  if (lock) return;
   const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX-rect.left)/cell);
-  const y = Math.floor((e.clientY-rect.top)/cell);
+  const x = Math.floor((e.clientX-rect.left-20)/cell);
+  const y = Math.floor((e.clientY-rect.top-50)/cell);
   const i = y*4 + x;
-  if (flipped.includes(i) || matched.has(i)) return;
+  if (i < 0 || i > 15 || flipped.includes(i) || matched.has(i)) return;
   flipped.push(i);
   draw();
   if (flipped.length === 2) {
+    moves++;
     lock = true;
     setTimeout(() => {
       if (cards[flipped[0]] === cards[flipped[1]]) {
@@ -70,10 +90,11 @@ canvas.addEventListener('click', e => {
       flipped = [];
       lock = false;
       draw();
-    }, 800);
+    }, 700);
   }
 });
 
+init();
 draw();
 </script>
 </body>
